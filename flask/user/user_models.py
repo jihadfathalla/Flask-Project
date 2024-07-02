@@ -1,13 +1,19 @@
-from extensions import db
+from app.config import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+import enum
 
 
-roles_users = db.Table('roles_users',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('role_id', db.Integer, db.ForeignKey('role.id'))
-)
+class Role(enum.Enum):
+    seller = "seller"
+    buyer = "buyer"
+
+
+# class Role(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String(20), unique=True, nullable=False)
+
     
 
 class User(db.Model,UserMixin):
@@ -16,8 +22,9 @@ class User(db.Model,UserMixin):
     username = db.Column(db.String(), nullable=False)
     email = db.Column(db.String(), nullable=False)
     password = db.Column(db.Text())
-    deposit = db.Column(db.Float, nullable=False)
-    roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
+    deposit = db.Column(db.Float, nullable=False,default=0)    
+    # roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
+    role = db.Column( db.Enum(Role), nullable=True)
 
 
     def __repr__(self):
@@ -40,10 +47,8 @@ class User(db.Model,UserMixin):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+        
 
-class Role(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(20), unique=True, nullable=False)
 
 
 class TokenBlocklist(db.Model):
@@ -57,3 +62,15 @@ class TokenBlocklist(db.Model):
     def save(self):
         db.session.add(self)
         db.session.commit()
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
