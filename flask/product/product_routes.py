@@ -21,6 +21,13 @@ product_bp = Blueprint("product", __name__)
 @product_bp.get("")
 @jwt_required()
 def list():
+    """
+    list all products.
+
+    Returns:
+    list of products 
+
+    """
     products = Product.query.all()
     result = ProductSchema().dump(products, many=True)
     return (
@@ -37,6 +44,16 @@ def list():
 @product_bp.get("/<int:product_id>")
 @jwt_required()
 def get(product_id):
+    """
+    get product by id .
+
+    param :product_id:
+
+    Returns:
+    "tokens":  product_id data in success
+    message error in fail
+
+    """
     product = Product.query.get_or_404(product_id)
     return jsonify(product.to_dict())
 
@@ -46,6 +63,15 @@ def get(product_id):
 @jwt_required()
 @role_required('seller')
 def create_product():
+    """
+    create product .
+
+    role_required :only seller role:
+
+    Returns:
+     product data in success
+
+    """
     data = request.get_json()
     if not data or  'product_name' not in data or 'cost' not in data :
         return jsonify({"message": "please required fields(product_name,cost,email)"}), 400
@@ -76,6 +102,16 @@ def create_product():
 @jwt_required()
 @role_required('seller')
 def update_product(product_id):
+    """
+    update product .
+
+    role_required :only seller role:
+
+    Returns:
+    product new data in success
+    error message in fail
+    
+    """
     product = Product.query.get_or_404(product_id)
 
     if product.seller_id == current_user.id:
@@ -99,6 +135,15 @@ def update_product(product_id):
 @role_required('seller')
 @product_bp.delete("/<int:product_id>")
 def delete_product(product_id):
+    """
+    delete product .
+
+    role_required :only seller role:
+
+    Returns:
+    success message in success
+
+    """
     product = Product.query.get_or_404(product_id)
     if product.seller_id == current_user.id:
         db.session.delete(product)
@@ -121,6 +166,20 @@ def delete_product(product_id):
 @jwt_required()
 @role_required('buyer')
 def buy_product():
+    """
+    make user with role buyer buy product by any amount with the money they’ve deposited. 
+    
+    role_required :only buyer role:
+
+    body
+    product_id: integer
+    amount :integer
+
+    Returns:
+    products_purchased,total_spent data,change in success
+     
+
+    """
     data = request.get_json()
     product = Product.query.get_or_404(data.get('product_id'))
     amount= data.get('amount')
@@ -146,7 +205,20 @@ def buy_product():
     
     
 def calculate_change(amount):
-    coins = [1.0, 0.5, 0.2, 0.1, 0.05]
+    """
+    return only coin in [5, 10, 20, 50, 100]
+    
+    param :amount
+
+    product_id: integer
+    amount :integer
+
+    Returns:
+    change
+
+    """
+    
+    coins = [ 0.5, 0.2, 0.1, 0.05]
     change = {}
     remaining = round(amount, 2)
     for coin in coins:

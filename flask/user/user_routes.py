@@ -29,6 +29,20 @@ auth_bp = Blueprint("auth", __name__)
 @view_logging_aspect(USER_LOGGER, USER_LOG_FILE_PATH)
 @auth_bp.post("/register")
 def register_user():
+    """
+    user register.
+
+    body:
+    username (text).
+    password (text).
+    email (email).
+    role [buyer,seller]
+
+    Returns:
+    "success message":  User created  in success
+    message error in fail if validation fails in deposit
+
+    """
     data = request.get_json()
 
     user = User.get_user_by_username(username=data.get("username"))
@@ -59,6 +73,18 @@ def register_user():
 @view_logging_aspect(USER_LOGGER, USER_LOG_FILE_PATH)
 @auth_bp.post("/login")
 def login_user():
+    """
+    user login.
+
+    body:
+    username (text).
+    password (text).
+
+    Returns:
+    "tokens":  access_token, refresh_token,200 in success
+    message error in fail
+
+    """
     data = request.get_json()
 
     user = User.get_user_by_username(username=data.get("username"))
@@ -80,6 +106,11 @@ def login_user():
 @auth_bp.get("/refresh")
 @jwt_required()
 def refresh_access():
+    """
+    get refresh token.
+    Returns:
+    "token": new_access_token
+    """
     identity = get_jwt_identity()
 
     new_access_token = create_access_token(identity=identity)
@@ -90,6 +121,9 @@ def refresh_access():
 @auth_bp.get('/logout')
 @jwt_required(verify_type=False) 
 def logout_user():
+    """
+    user loggout.
+    """
     jwt = get_jwt()
 
     jti = jwt['jti']
@@ -107,6 +141,13 @@ def logout_user():
 @auth_bp.get("/list")
 @jwt_required()
 def list_users():
+    """
+    list users.
+
+
+    Returns:
+    "tokens": list of all users
+    """
 
     page = request.args.get("page", default=1, type=int)
 
@@ -131,6 +172,14 @@ def list_users():
 @auth_bp.get("/current/user")
 @jwt_required()
 def get_current_user():
+    """
+    get current user.
+
+
+    Returns:
+    user name and email
+
+    """
     return jsonify(
         {
             "message": "message",
@@ -146,6 +195,16 @@ def get_current_user():
 @auth_bp.get("/<int:user_id>")
 @jwt_required()
 def get(user_id):
+    """
+    get user by id .
+
+    param :user_id
+
+    Returns:
+    "tokens":  user data in success
+    message error in fail
+
+    """
     user = User.query.get_or_404(user_id)
     return jsonify(UserSchema().dump(user))
 
@@ -155,6 +214,16 @@ def get(user_id):
 @auth_bp.put("/<int:user_id>")
 @jwt_required()
 def update_user(user_id):
+    """
+    update user fields .
+
+    param: user_id
+
+    Returns:
+    user with updated data in  success
+    message error in fail
+
+    """
     user = User.query.get_or_404(user_id)
     data = request.get_json()
     if add_deposit(data.get('deposit', 0)):
@@ -180,6 +249,16 @@ def update_user(user_id):
 @auth_bp.delete("/<int:user_id>")
 @jwt_required()
 def delete_user(user_id):
+    """
+    delete user .
+
+    param :user_id
+
+    Returns:
+    success message in  in success
+    message error in fail
+
+    """
     user = User.query.get_or_404(user_id)
     user.delete()
     return jsonify(
@@ -197,6 +276,17 @@ def delete_user(user_id):
 @role_required('buyer')
 @auth_bp.post("/deposit/money")
 def deposit_money():
+    """
+    make current user  with a “buyer” role can deposit 5, 10, 20, 50, and 100 cent coins into their vending machine account and update it's balance in user table.
+
+    body:
+    amount (float).
+
+    Returns:
+    the new balance in success
+    message error in fail on error 
+
+    """
     data = request.get_json()
     amount= data.get('amount')
     if add_deposit(amount, user=current_user):
@@ -233,6 +323,15 @@ def deposit_money():
 @role_required('buyer')
 @auth_bp.post("/reset/deposit")
 def reset_deposit():
+    """
+    make current user reset deposit balance( make it =0) in user table.
+
+   .
+
+    Returns:
+    success message
+
+    """
     user =current_user
     user.deposit= 0
     user.save()
@@ -247,10 +346,20 @@ def reset_deposit():
 
 
 def add_deposit(value, user=None):
-        if value in [0,5, 10, 20, 50, 100]:
-            if user:
-                user.deposit= value
-                user.save()
-            return True
-        else:
-            return False
+    """
+    check money amount in [0,5, 10, 20, 50, 100]
+    
+    param : value:
+
+    Returns:
+    the True success
+    messageFalse in fail
+
+    """
+    if value in [0,5, 10, 20, 50, 100]:
+        if user:
+            user.deposit= value
+            user.save()
+        return True
+    else:
+        return False
